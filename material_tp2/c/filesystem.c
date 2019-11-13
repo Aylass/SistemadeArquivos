@@ -2,147 +2,152 @@
 #include <stdint.h>
 #include <string.h>
 
-#define BLOCK_SIZE		1024
-#define BLOCKS			2048
-#define FAT_SIZE		(BLOCKS * 2)
-#define FAT_BLOCKS		(FAT_SIZE / BLOCK_SIZE)
-#define ROOT_BLOCK		FAT_BLOCKS
-#define DIR_ENTRY_SIZE		32
-#define DIR_ENTRIES		(BLOCK_SIZE / DIR_ENTRY_SIZE)
+#define BLOCK_SIZE 1024
+#define BLOCKS 2048
+#define FAT_SIZE (BLOCKS * 2)
+#define FAT_BLOCKS (FAT_SIZE / BLOCK_SIZE)
+#define ROOT_BLOCK FAT_BLOCKS
+#define DIR_ENTRY_SIZE 32
+#define DIR_ENTRIES (BLOCK_SIZE / DIR_ENTRY_SIZE)
 
 /* FAT data structure */
 int16_t fat[BLOCKS];
 /* data block */
 int8_t data_block[BLOCK_SIZE];
-
-
+int count = 0;
 
 /* directory entry */
-struct dir_entry_s {
-	int8_t filename[25];
-	int8_t attributes;
-	int16_t first_block;
-	int32_t size;
+struct dir_entry_s
+{
+    int8_t filename[25];
+    int8_t attributes;
+    int16_t first_block;
+    int32_t size;
 };
-void splitByPositionNDelimiter(char* str, int num, char* delimiter ){
+void splitByPositionNDelimiter(char *str, int num, char *delimiter)
+{
     int auxVector = 0;
-  char holder[num];
-  holder[auxVector++] = strtok(str,delimiter);
-  while (auxVector != num){
-      printf ("%s\n",holder[auxVector]);
-      holder[auxVector++] = strtok (NULL, delimiter);
-      printf ("%s\n",holder[auxVector]);
-  }
+    char holder[num];
+    holder[auxVector++] = strtok(str, delimiter);
+    while (auxVector != num)
+    {
+        printf("%s\n", holder[auxVector]);
+        holder[auxVector++] = strtok(NULL, delimiter);
+        printf("%s\n", holder[auxVector]);
+    }
 }
 
 /* reads a data block from disk */
 void read_block(char *file, int32_t block, int8_t *record)
 {
-	FILE *f;
+    FILE *f;
 
-	f = fopen(file, "r+");
-	fseek(f, block * BLOCK_SIZE, SEEK_SET);
-	fread(record, 1, BLOCK_SIZE, f);
-	fclose(f);
-
+    f = fopen(file, "r+");
+    fseek(f, block * BLOCK_SIZE, SEEK_SET);
+    fread(record, 1, BLOCK_SIZE, f);
+    fclose(f);
 }
 
 /* writes a data block to disk */
 void write_block(char *file, int32_t block, int8_t *record)
 {
-	FILE *f;
+    FILE *f;
 
-	f = fopen(file, "r+");
-	fseek(f, block * BLOCK_SIZE, SEEK_SET);
-	fwrite(record, 1, BLOCK_SIZE, f);
-	fclose(f);
+    f = fopen(file, "r+");
+    fseek(f, block * BLOCK_SIZE, SEEK_SET);
+    fwrite(record, 1, BLOCK_SIZE, f);
+    fclose(f);
 }
 
 /* reads the FAT from disk */
 void read_fat(char *file, int16_t *fat)
 {
-	FILE *f;
+    FILE *f;
 
-	f = fopen(file, "r+");
-	fseek(f, 0, SEEK_SET);
-	fread(fat, 2, BLOCKS, f);
-	fclose(f);
+    f = fopen(file, "r+");
+    fseek(f, 0, SEEK_SET);
+    fread(fat, 2, BLOCKS, f);
+    fclose(f);
 }
 
 /* writes the FAT to disk */
 void write_fat(char *file, int16_t *fat)
 {
-	FILE *f;
+    FILE *f;
 
-	f = fopen(file, "r+");
-	fseek(f, 0, SEEK_SET);
-	fwrite(fat, 2, BLOCKS, f);
-	fclose(f);
+    f = fopen(file, "r+");
+    fseek(f, 0, SEEK_SET);
+    fwrite(fat, 2, BLOCKS, f);
+    fclose(f);
 }
 
 /* reads a directory entry from a directory */
 void read_dir_entry(int32_t block, int32_t entry, struct dir_entry_s *dir_entry)
 {
-	read_block("filesystem.dat", block, data_block);
-	memcpy(dir_entry, &data_block[entry * sizeof(struct dir_entry_s)], sizeof(struct dir_entry_s));
+    read_block("filesystem.dat", block, data_block);
+    memcpy(dir_entry, &data_block[entry * sizeof(struct dir_entry_s)], sizeof(struct dir_entry_s));
 }
 
 /* writes a directory entry in a directory */
 void write_dir_entry(int block, int entry, struct dir_entry_s *dir_entry)
 {
-	read_block("filesystem.dat", block, data_block);
-	memcpy(&data_block[entry * sizeof(struct dir_entry_s)], dir_entry, sizeof(struct dir_entry_s));
-	write_block("filesystem.dat", block, data_block);
+    read_block("filesystem.dat", block, data_block);
+    memcpy(&data_block[entry * sizeof(struct dir_entry_s)], dir_entry, sizeof(struct dir_entry_s));
+    write_block("filesystem.dat", block, data_block);
 }
 
 int main(void)
 {
-
-        shell();
-//	/* list entries from the root directory */
-
-//	}*/
-	return 0;
+    shell();
+    return 0;
 }
 
-void shell(){
-    do{
-        printf(">");
-        char cmd;
+void shell()
+{
+    char cmd;
+    do
+    {
+        printf("> ");
         scanf("%s", &cmd);
-        //strtok(&cmd," ");
-        //printf("%s",&cmd);
 
-        if(strcmp(&cmd, "init") == 0){
+        if (strcmp(&cmd, "init") == 0)
+        {
             init();
         }
-        else if(strcmp(&cmd, "mkdir") == 0){
-            //splitByPositionNDelimiter(cmd, 1, " ");
+        else if (strcmp(&cmd, "mkdir") == 0)
+        {
             mkdir();
         }
-        else if(strcmp(&cmd, "test") == 0){
-            test();
-        }
-        else if(strcmp(&cmd, "exit") == 0){
+        // else if(strcmp(&cmd, "test") == 0){
+        //     test();
+        // }
+        else if (strcmp(&cmd, "exit") == 0)
+        {
             exit(0);
         }
-        else{
+        else
+        {
             printf("Not recognized. Try digit 'help' for see all commands\n");
         }
 
-    }while(1);
+    } while (1);
 }
 
-
-int32_t getFreeBlock(){ //descobrir espaço vazio e retorna a posição
+int32_t getFreeBlock()
+{ //descobrir espaï¿½o vazio e retorna a posiï¿½ï¿½o
     int32_t i;
     for (i = ROOT_BLOCK + 1; i < BLOCKS; i++)
-        if(fat[i] == 0)
-              return i;
+        if (fat[i] == 0)
+            return i;
 }
-
-void init(){
-	FILE *f;
+void updateFAT(char *file, int16_t position)
+{
+    fat[position] = 0x7fff;
+    write_fat(file,fat);
+}
+void init()
+{
+    FILE *f;
     int32_t i;
     /* create filesystem.dat if it doesn't exist */
     f = fopen("filesystem.dat", "a");
@@ -168,28 +173,29 @@ void init(){
     /* write the remaining data blocks to disk */
     for (i = ROOT_BLOCK + 1; i < BLOCKS; i++)
         write_block("filesystem.dat", i, data_block);
-
 }
 
-void mkdir(){
+void mkdir()
+{
     int32_t i;
     struct dir_entry_s dir_entry;
-	memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-	strcpy((char *)dir_entry.filename, "test");
-	dir_entry.attributes = 0x01;
+    memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
+    strcpy((char *)dir_entry.filename, "test");
+    dir_entry.attributes = 0x01;
 
-	//descobrir espaço vazio
-	dir_entry.first_block = getFreeBlock();//coloca espaço vazio aq
-	dir_entry.size = 0;
+    //descobrir espaï¿½o vazio
+    dir_entry.first_block = getFreeBlock(); //coloca espaï¿½o vazio aq
+    printf("\n%d\n", getFreeBlock());
+    dir_entry.size = 0;
 
-    write_dir_entry(ROOT_BLOCK, 0   , &dir_entry);
-
+    write_dir_entry(ROOT_BLOCK, count, &dir_entry);
+    count++;
     //atualiza a FAT
-
-
-    //printa os diretórios
-	for (i = 0; i < DIR_ENTRIES; i++) {
-		read_dir_entry(ROOT_BLOCK, i, &dir_entry);
-		printf("Entry %d, file: %s attr: %d first: %d size: %d\n", i, dir_entry.filename, dir_entry.attributes, dir_entry.first_block, dir_entry.size);
-}
+    updateFAT("filesystem.dat",dir_entry.first_block);
+    //printa os diretï¿½rios
+    // for (i = 0; i < DIR_ENTRIES; i++)
+    // {
+    //     read_dir_entry(ROOT_BLOCK, i, &dir_entry);
+    //     printf("Entry %d, file: %s attr: %d first: %d size: %d\n", i, dir_entry.filename, dir_entry.attributes, dir_entry.first_block, dir_entry.size);
+    // }
 }
