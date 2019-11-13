@@ -11,10 +11,12 @@
 #define DIR_ENTRIES (BLOCK_SIZE / DIR_ENTRY_SIZE)
 
 /* FAT data structure */
+
 int16_t fat[BLOCKS];
+
 /* data block */
+
 int8_t data_block[BLOCK_SIZE];
-int count = 0;
 
 /* directory entry */
 struct dir_entry_s
@@ -32,6 +34,9 @@ void getCommand(char* name, char* receiver){
     }while(!isspace(name[counter]) && name[counter] != '\0');
     receiver[counter] = '\0';
 }
+int startsWith(char* string,char* pre){
+    return strncmp(pre, string, strlen(pre)) == 0;
+}
 char* getLastWord(char* name){
     char* token;
     char* aux;
@@ -44,6 +49,7 @@ char* getLastWord(char* name){
    return token;
 }
 /* reads a data block from disk */
+
 void read_block(char *file, int32_t block, int8_t *record)
 {
     FILE *f;
@@ -55,6 +61,7 @@ void read_block(char *file, int32_t block, int8_t *record)
 }
 
 /* writes a data block to disk */
+
 void write_block(char *file, int32_t block, int8_t *record)
 {
     FILE *f;
@@ -66,6 +73,7 @@ void write_block(char *file, int32_t block, int8_t *record)
 }
 
 /* reads the FAT from disk */
+
 void read_fat(char *file, int16_t *fat)
 {
     FILE *f;
@@ -77,6 +85,7 @@ void read_fat(char *file, int16_t *fat)
 }
 
 /* writes the FAT to disk */
+
 void write_fat(char *file, int16_t *fat)
 {
     FILE *f;
@@ -88,6 +97,7 @@ void write_fat(char *file, int16_t *fat)
 }
 
 /* reads a directory entry from a directory */
+
 void read_dir_entry(int32_t block, int32_t entry, struct dir_entry_s *dir_entry)
 {
     read_block("filesystem.dat", block, data_block);
@@ -95,11 +105,14 @@ void read_dir_entry(int32_t block, int32_t entry, struct dir_entry_s *dir_entry)
 }
 
 /* writes a directory entry in a directory */
+
 void write_dir_entry(int block, int entry, struct dir_entry_s *dir_entry)
 {
+
     read_block("filesystem.dat", block, data_block);
     memcpy(&data_block[entry * sizeof(struct dir_entry_s)], dir_entry, sizeof(struct dir_entry_s));
     write_block("filesystem.dat", block, data_block);
+
 }
 
 int main(void)
@@ -115,23 +128,21 @@ void shell()
     {
         printf(">");
         fgets(input, sizeof input, stdin);
-        
-        char command[30];
-        getCommand(input, &command);
-        // if(isspace(command[strlen(command) - 1])) command = input;
-        if (strcmp(command, "init") == 0)
+        if (startsWith(input, "init"))
         {
             init();
         }
-        else if (strcmp(command, "mkdir") == 0)
+        else if (startsWith(input, "mkdir"))
         {
-            char* name = getLastWord(input);   
+            char* name = getLastWord(input);
             mkdir(name);
         }
-        // else if(strcmp(&input, "test") == 0){
-        //     test();
-        // }
-        else if (strcmp(command, "exit") == 0)
+        else if (startsWith(input, "ls"))
+        {
+            char* name = getLastWord(input);
+            mkdir(name);
+        }
+        else if (startsWith(input, "exit"))
         {
             exit(0);
         }
@@ -143,18 +154,35 @@ void shell()
     } while (1);
 }
 
-int32_t getFreeBlock()
+int32_t getSpaceFAT()
 { //descobrir espa�o vazio e retorna a posi��o
+
     int32_t i;
-    for (i = ROOT_BLOCK + 1; i < BLOCKS; i++)
+    for (i = ROOT_BLOCK + 1; i < BLOCKS; i++){
         if (fat[i] == 0)
             return i;
+    }
+    return -1;
+
 }
+
+int8_t getFreeBlock(int8_t* block){
+
+    int8_t i;
+    for(i = 0; i < BLOCK_SIZE;i++){
+        if (!block[i])
+            return i;
+    }
+    return -1;
+}
+
 void updateFAT(char *file, int16_t position)
 {
+    read_fat(file,fat);
     fat[position] = 0x7fff;
     write_fat(file,fat);
 }
+
 void init()
 {
     FILE *f;
@@ -187,26 +215,42 @@ void init()
 
 void mkdir(char* name)
 {
-    int32_t i;
     struct dir_entry_s dir_entry;
     memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
     strcpy((char *)dir_entry.filename, name);
     dir_entry.attributes = 0x01;
-
-    //descobrir espa�o vazio
-    dir_entry.first_block = getFreeBlock(); //coloca espa�o vazio aq
-    printf("\n%d\n", getFreeBlock());
+    dir_entry.first_block = getSpaceFAT();
     dir_entry.size = 0;
 
-    write_dir_entry(ROOT_BLOCK, count, &dir_entry);
-    count++;
-    //atualiza a FAT
+    write_dir_entry(ROOT_BLOCK, 0, &dir_entry);
+ int8_t i;
     updateFAT("filesystem.dat",dir_entry.first_block);
-    //printa os diret�rios
-    for (i = 0; i < 2; i++)
+
+        for (i = 0; i < DIR_ENTRIES; i++)
     {
         read_dir_entry(ROOT_BLOCK, i, &dir_entry);
-        printf("Entry %d, file: %s attr: %d first: %d size: %d\n", i, dir_entry.filename, dir_entry.attributes, dir_entry.first_block, dir_entry.size);
+        printf("Filename :%s\tSize :%d\n",dir_entry.filename, dir_entry.size);
+    }
+
+}
+void ls(){
+
+    int8_t i;
+    struct dir_entry_s dir_entry;
+    for (i = 0; i < DIR_ENTRIES; i++)
+    {
+        read_dir_entry(ROOT_BLOCK, i, &dir_entry);
+        printf("Filename :%s\tSize :%d",dir_entry.filename, dir_entry.size);
     }
 }
-
+int8_t findByName(char* name){
+    int8_t i;
+    struct dir_entry_s dir_entry;
+    for (i = 0; i < DIR_ENTRIES; i++)
+    {
+        read_dir_entry(ROOT_BLOCK, i, &dir_entry);
+        if(strcmp(name, dir_entry.filename) == 0)
+            return i;
+    }
+    return -1;
+}
