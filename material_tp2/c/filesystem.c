@@ -24,19 +24,25 @@ struct dir_entry_s
     int16_t first_block;
     int32_t size;
 };
-void splitByPositionNDelimiter(char *str, int num, char *delimiter)
-{
-    int auxVector = 0;
-    char holder[num];
-    holder[auxVector++] = strtok(str, delimiter);
-    while (auxVector != num)
-    {
-        printf("%s\n", holder[auxVector]);
-        holder[auxVector++] = strtok(NULL, delimiter);
-        printf("%s\n", holder[auxVector]);
-    }
+void getCommand(char* name, char* receiver){
+    int counter = 0;
+    do{
+        receiver[counter] = name[counter];
+        counter++;
+    }while(!isspace(name[counter]) && name[counter] != '\0');
+    receiver[counter] = '\0';
 }
-
+char* getLastWord(char* name){
+    char* token;
+    char* aux;
+    char* del = " ";
+    aux = strtok(name, del);
+   while( aux != NULL ) {
+        token = aux;
+        aux = strtok(NULL, del);
+   }
+   return token;
+}
 /* reads a data block from disk */
 void read_block(char *file, int32_t block, int8_t *record)
 {
@@ -104,24 +110,28 @@ int main(void)
 
 void shell()
 {
-    char cmd;
+    char input[255];
     do
     {
-        printf("> ");
-        scanf("%s", &cmd);
-
-        if (strcmp(&cmd, "init") == 0)
+        printf(">");
+        fgets(input, sizeof input, stdin);
+        
+        char command[30];
+        getCommand(input, &command);
+        // if(isspace(command[strlen(command) - 1])) command = input;
+        if (strcmp(command, "init") == 0)
         {
             init();
         }
-        else if (strcmp(&cmd, "mkdir") == 0)
+        else if (strcmp(command, "mkdir") == 0)
         {
-            mkdir();
+            char* name = getLastWord(input);   
+            mkdir(name);
         }
-        // else if(strcmp(&cmd, "test") == 0){
+        // else if(strcmp(&input, "test") == 0){
         //     test();
         // }
-        else if (strcmp(&cmd, "exit") == 0)
+        else if (strcmp(command, "exit") == 0)
         {
             exit(0);
         }
@@ -175,12 +185,12 @@ void init()
         write_block("filesystem.dat", i, data_block);
 }
 
-void mkdir()
+void mkdir(char* name)
 {
     int32_t i;
     struct dir_entry_s dir_entry;
     memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-    strcpy((char *)dir_entry.filename, "test");
+    strcpy((char *)dir_entry.filename, name);
     dir_entry.attributes = 0x01;
 
     //descobrir espa�o vazio
@@ -193,9 +203,10 @@ void mkdir()
     //atualiza a FAT
     updateFAT("filesystem.dat",dir_entry.first_block);
     //printa os diret�rios
-    // for (i = 0; i < DIR_ENTRIES; i++)
-    // {
-    //     read_dir_entry(ROOT_BLOCK, i, &dir_entry);
-    //     printf("Entry %d, file: %s attr: %d first: %d size: %d\n", i, dir_entry.filename, dir_entry.attributes, dir_entry.first_block, dir_entry.size);
-    // }
+    for (i = 0; i < 2; i++)
+    {
+        read_dir_entry(ROOT_BLOCK, i, &dir_entry);
+        printf("Entry %d, file: %s attr: %d first: %d size: %d\n", i, dir_entry.filename, dir_entry.attributes, dir_entry.first_block, dir_entry.size);
+    }
 }
+
