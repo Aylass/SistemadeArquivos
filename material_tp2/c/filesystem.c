@@ -111,21 +111,20 @@ int main(void)
     shell();
     return 0;
 }
-//void verifyPath(char* path){
-//    if(strlen(path) == 2 && strcmp((char *)path[1]," "))
-//        printf("should end here");
-        //return;
-//    char* token;
-//    char* aux;
-//    char* del = "/";
-//    aux = strtok(path, del);
-   //while( aux != NULL ) {
-//        printf("\n%s\n", aux);
-   //     token = aux;
-  //      aux = strtok(NULL, del);
- //  }
-//   return token;
-//}
+void verifyPath(char* path){
+//    if(path[0] == '/' && strlen(path)> 1)
+//        path = &path[1];
+    char* token;
+    char* aux;
+    char* del = "/";
+    aux = strtok(path, del);
+//    do{
+//        token = aux;
+        aux = strtok(NULL, del);
+//        printf("%s\n", aux);
+//   }while(aux != NULL);
+   return token;
+}
 void shell()
 {
     char input[255];
@@ -148,8 +147,8 @@ void shell()
         }
          else if (startsWith(input, "test"))
         {
-//            char* name = getLastWord(input);
-//            verifyPath(name);
+            char* name = getLastWord(input);
+            verifyPath(name);
         }
         else if (startsWith(input, "exit"))
         {
