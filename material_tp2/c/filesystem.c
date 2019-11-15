@@ -27,17 +27,31 @@ struct dir_entry_s
     int32_t size;
 };
 
-int8_t findFreeSpace(){
+int8_t findFreeSpace(int8_t block){
     int8_t i;
     struct dir_entry_s dir_entry;
     for (i = 0; i < DIR_ENTRIES; i++)
     {
-        read_dir_entry(ROOT_BLOCK, i, &dir_entry);
+        read_dir_entry(block, i, &dir_entry);
         if(strcmp("", dir_entry.filename) == 0)
             return i;
     }
     return -1;
 }
+
+int isEmpty(int8_t block){
+    int8_t i;
+    struct dir_entry_s dir_entry;
+    for (i = 0; i < DIR_ENTRIES; i++)
+    {
+        read_dir_entry(block, i, &dir_entry);
+        printf("%s", dir_entry.filename);
+        if(strcmp("", dir_entry.filename) != 0)
+            return 0;//ta vazio
+    }
+    return 1;//tem coisa
+}
+
 int startsWith(char* string,char* pre){
     return strncmp(pre, string, strlen(pre)) == 0;
 }
@@ -60,6 +74,8 @@ char* getLastWord(char* name){
         token = aux;
         aux = strtok(NULL, " ");
    }
+   int size = strlen(token);
+   token[size-1] = '\0';
    return token;
 }
 /* reads a data block from disk */
@@ -128,7 +144,18 @@ void write_dir_entry(int block, int entry, struct dir_entry_s *dir_entry)
     write_block("filesystem.dat", block, data_block);
 
 }
-
+char * getFilename(char* path){
+        char *dirc, *basec, *bname, *dname;
+           basec = strdup(path);
+           bname = basename(basec);
+           return bname;
+}
+char * getPathname(char* path){
+        char *dirc, *basec, *bname, *dname;
+           dirc = strdup(path);
+           dname = dirname(dirc);
+           return dname;
+}
 int main(void)
 {
     shell();
@@ -136,7 +163,7 @@ int main(void)
 }
 
 int16_t verifyPath(char* path){
-    if(strlen(path) == 2 && path[0] == '/'){
+    if(strlen(path) == 1 && path[0] == '/'){
         return ROOT_BLOCK;
     }
     if(path[0] == '/' && strlen(path) > 1)
@@ -145,15 +172,15 @@ int16_t verifyPath(char* path){
     char* del = "/";
     int16_t lPath = ROOT_BLOCK;
     aux = strtok(path, del);
-    printf("%c", aux[0]);
     while(aux != NULL)
     {
         int verifier = findByName(lPath,aux);
+        printf("%d", verifier);
         if(verifier != -1){
             lPath = verifier;
         }
         else{
-            printf("Path  /%s  not found.\n", path);
+            printf("Path not found.\n", path);
             lPath = -1;
             break;
         }
@@ -162,27 +189,15 @@ int16_t verifyPath(char* path){
    return lPath;
 }
 
-char* getFileName(char* path){
-    if(path[0] == '/' && strlen(path)> 1)
-        path = &path[1];
-    char* aux;
-    char* token;
-    char* del = "/";
-    aux = strtok(path, del);
-    while(aux != NULL)
-    {
-        token = aux;
-        aux = strtok(NULL, del);
-   }
-   return token;
-}
-void removeLastBackSlash(char* path){
-    int size = strlen(path)-2;
-    while(path[size] != '/'){
-        size--;
-    }
-    path[size] = '\0';
-}
+
+//void removeLastBackSlash(char* path){
+//    int size = strlen(path)-2;
+//    while(path[size] != '/'){
+//        size--;
+//    }
+//    path[size] = '\0';
+//}
+
 void verifyDir(){
  return;
 }
@@ -200,23 +215,42 @@ void shell()
         else if (startsWith(input, "mkdir")) //NEED TO FIX THE PATH PROBLEM.... BUT WORKING!
         {
             char* name = getLastWord(input);
-            //int16_t res = verifyPath(name);
-            //if(res != -1)
-                mkdir(ROOT_BLOCK,name);
+            char* filename = getFilename(name);
+            char* pathname = getPathname(name);
+            int16_t block = verifyPath(pathname);
+            if(block != -1){
+                mkdir(block,filename);
+            }
         }
         else if (startsWith(input, "ls")) // FUNCTIONAL, NEED TO CATCH EXCEPTIONS
         {
             char* name = getLastWord(input);
+
             int16_t res = verifyPath(name);
             if(res != -1)
                 ls(res);
         }
          else if (startsWith(input, "test"))
         {
+
+        }
+        else if (startsWith(input, "unlink"))
+        {
             char* name = getLastWord(input);
-            printf("pam");
-            untilLastPath(name);
-            printf("%s", name);
+            char* filename = getFilename(name);
+            char* pathname = getPathname(name);
+
+            unLink(name,pathname,filename);
+        }
+        else if (startsWith(input, "create"))
+        {
+            char* name = getLastWord(input);
+            char* filename = getFilename(name);
+            char* pathname = getPathname(name);
+            int16_t block = verifyPath(pathname);
+            if(block != -1){
+                create(block,filename);
+            }
         }
         else if (startsWith(input, "exit"))
         {
@@ -228,6 +262,55 @@ void shell()
         }
 
     } while (1);
+}
+void removeFat(char *file, int16_t position)
+{
+    read_fat(file,fat);
+    fat[position] = 0;
+    write_fat(file,fat);
+}
+
+int8_t findByBlock(int8_t block,char* name){
+
+    int8_t i;
+    struct dir_entry_s dir_entry;
+    for (i = 0; i < DIR_ENTRIES; i++)
+    {
+        read_dir_entry(block, i, &dir_entry);
+        if(strcmp(dir_entry.filename, name) == 0){
+           return i;
+        }
+    }
+    return -1;
+}
+
+void unLink(char* path, char* pathname, char* filename){
+    int16_t block;
+    block = verifyPath(path);
+    if(block == -1){
+
+        return;
+    }
+    int aux = isEmpty(block);
+    if(aux == 1){
+    }else{
+        printf("Is not empty");
+        return;
+    }
+    removeFat("filesystem.dat",block);
+    struct dir_entry_s dir_entry;
+
+    memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
+    strcpy((char *)dir_entry.filename, "");
+    dir_entry.attributes = 0;
+    dir_entry.first_block = 0;
+    dir_entry.size = 0;
+
+    int16_t blockpai;
+    blockpai = verifyPath(pathname);
+    int8_t index = findByBlock(blockpai,filename);
+
+    write_dir_entry(blockpai, index , &dir_entry);
 }
 
 int32_t getSpaceFAT()
@@ -288,23 +371,32 @@ void init()
     for (i = ROOT_BLOCK + 1; i < BLOCKS; i++)
         write_block("filesystem.dat", i, data_block);
 }
-void untilLastPath(char* path){
-    int size = strlen(path);
-    int primPal = 0;
-    for(size; size > 0; size--){
-        if(path[size] == '/'){
-            primPal = size; //pega a posição do último /
-            break;
-        }
+void mkdir(int16_t block,char* name)
+{
+    if(findByName(block,name) != -1){
+        printf("already exist with same name '%s'. \n", name);
+        return;
     }
-    char* lastPal;
-    for(int i = primPal+1; i < strlen(path); i++){
-        lastPal[i] = path[i];
+    int8_t space = findFreeSpace(block);
+    if(space == -1){
+        printf("Space unavailable");
+        return;
     }
-    path[primPal] = '\0';
+    struct dir_entry_s dir_entry;
+
+
+    memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
+    strcpy((char *)dir_entry.filename, name);
+    dir_entry.attributes = 0x02;
+    dir_entry.first_block = getSpaceFAT();
+    dir_entry.size = 0;
+
+    write_dir_entry(block, space , &dir_entry);
+    write_block("filesystem.dat", block, data_block);
+    updateFAT("filesystem.dat",dir_entry.first_block);
 }
 
-void mkdir(int16_t block,char* name)
+void create(int16_t block,char* name)
 {
     if(findByName(block,name) != -1){
         printf("already exist with same name '%s'. \n", name);
@@ -327,7 +419,6 @@ void mkdir(int16_t block,char* name)
     write_dir_entry(block, space , &dir_entry);
     write_block("filesystem.dat", block, data_block);
     updateFAT("filesystem.dat",dir_entry.first_block);
-
 }
 
 void ls(int8_t block){
