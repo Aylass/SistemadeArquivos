@@ -175,7 +175,6 @@ int16_t verifyPath(char* path){
     while(aux != NULL)
     {
         int verifier = findByName(lPath,aux);
-        printf("%d", verifier);
         if(verifier != -1){
             lPath = verifier;
         }
@@ -252,6 +251,15 @@ void shell()
                 create(block,filename);
             }
         }
+        else if (startsWith(input, "write"))
+        {
+            char* path = getLastWord(input);
+            char* filename = getFilename(path);
+            char* pathname = getPathname(path);
+            char* string = "pamela larinha dolinho";
+            write(path,pathname,filename,string);
+
+        }
         else if (startsWith(input, "exit"))
         {
             exit(0);
@@ -263,6 +271,19 @@ void shell()
 
     } while (1);
 }
+
+void write(char* path, char* pathname, char* filename, char* string){
+    int size = 0;
+    int16_t block = verifyPath(path);
+    printf("%s", path);
+    write_block("filesystem.dat",block,data_block);
+    for(size; size < strlen(string);size++){
+        data_block[size] = (int8_t)string[size];
+    }
+
+    write_block("filesystem.dat",block,data_block);
+}
+
 void removeFat(char *file, int16_t position)
 {
     read_fat(file,fat);
