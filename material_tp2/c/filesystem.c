@@ -263,3 +263,21 @@ void write(char *path, char *pathname, char *filename, char *string)
     }
     write_block("filesystem.dat", fileBlock, data_block);
 }
+
+
+void write(char *pathname, char *filename)
+{
+    int16_t block = verifyPath(pathname);
+    if (block == -1)
+    {
+        return;
+    }
+    int32_t fileBlock = findByName(block, filename);
+
+
+    read_block("filesystem.dat", fileBlock, data_block);
+    for (int size = 0; size < strlen(string); size++)
+    {
+    printf("%c",data_block[size]);
+    }
+}
