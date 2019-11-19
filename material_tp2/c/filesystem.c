@@ -69,18 +69,22 @@ void shell()
         }
         else if (strstr(input, "write") != NULL)
         {
+            char *backup = strdup(input);
             char *path = getLastWord(input);
             char *filename = getFilename(path);
             char *pathname = getPathname(path);
-            char* string = getWords(input);
+            char *string = getWords(backup);
             write(path, pathname, filename, string);
         }
         else if (strstr(input, "append") != NULL)
         {
+            char *backup = strdup(input);
+
             char *path = getLastWord(input);
             char *filename = getFilename(path);
             char *pathname = getPathname(path);
-            char* string = getWords(input);
+            char *string = getWords(backup);
+
             append(path, pathname, filename, string);
         }
         else if (strstr(input, "read") != NULL)
@@ -93,11 +97,6 @@ void shell()
         else if (strstr(input, "exit") != NULL)
         {
             exit(0);
-        }
-        else if (strstr(input, "test") != NULL)
-        {
-            char* test = getWords(input);
-            printf("%s", test);
         }
         else
         {
@@ -290,10 +289,21 @@ void write(char *path, char *pathname, char *filename, char *string)
         printf("it is a directory.");
         return;
     }
-
+    struct dir_entry_s dir_entry;
     int32_t fileBlock = findByName(block, filename);
     if (fileBlock == -1)
         printf("file does not exists.");
+    
+    
+     for (int i = 0; i < DIR_ENTRIES; i++)
+    {
+        read_dir_entry(block, i, &dir_entry);
+        if(strcmp(dir_entry.filename,filename) == 0){
+            dir_entry.size = strlen(string);
+            write_dir_entry(block,i,&dir_entry);
+            break;
+        }
+    }
 
     for (int size = 0; size < strlen(string); size++)
     {
@@ -348,6 +358,17 @@ void append(char *path, char *pathname, char *filename, char *string)
     int lastPos = 0;
     for (lastPos; data_block[lastPos] != 0; lastPos++)
         printf("%c", data_block[lastPos]);
+
+    struct dir_entry_s dir_entry;
+     for (int i = 0; i < DIR_ENTRIES; i++)
+    {
+        read_dir_entry(block, i, &dir_entry);
+        if(strcmp(dir_entry.filename,filename) == 0){
+            dir_entry.size = dir_entry.size + strlen(string);
+            write_dir_entry(block,i,&dir_entry);
+            break;
+        }
+    }
 
     for (int size = lastPos, indexString = 0; size < BLOCK_SIZE && indexString < strlen(string); size++, indexString++)
     {

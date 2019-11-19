@@ -109,11 +109,10 @@ int isADir(int16_t block, char *name)
 
 }
 char *getWords(char *data){
-
-    char *token;
-    token = strtok(data, " ");
-    token = strtok(NULL, " ");
-    return token;
+    char* token1;
+    token1 = strtok(data, " ");
+    token1 = strtok(NULL, " ");
+    return token1;
 }
 char *getLastWord(char *name)
 {
