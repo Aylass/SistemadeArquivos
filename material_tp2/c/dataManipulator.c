@@ -93,8 +93,10 @@ int8_t findByName(int16_t block, char *name)
     }
     return -1;
 }
+
 int isADir(int16_t block, char *name)
 {
+
     int8_t i;
     struct dir_entry_s dir_entry;
     for (i = 0; i < DIR_ENTRIES; i++)
@@ -104,6 +106,11 @@ int isADir(int16_t block, char *name)
             return dir_entry.attributes == 0x02;
     }
     return -1;
+
+}
+char *getWords(char *data){
+
+return NULL;
 }
 char *getLastWord(char *name)
 {

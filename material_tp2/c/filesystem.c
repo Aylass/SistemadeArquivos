@@ -2,15 +2,12 @@
 
 void shell();
 void init();
-void ls(int8_t block);
+void ls(int8_t block, char *filename);
 
 void unLink(char *path, char *pathname, char *filename);
 
 int main(void)
 {
-    // read_block("filesystem.dat", 5, data_block);
-    // for(int i = 0; i < 30;i++)
-    //     printf("%c",data_block[i]);
     shell();
     return 0;
 }
@@ -27,6 +24,7 @@ void shell()
         }
         else if (strstr(input, "mkdir") != NULL) //NEED TO FIX THE PATH PROBLEM.... BUT WORKING!
         {
+
             char *name = getLastWord(input);
             char *filename = getFilename(name);
             char *pathname = getPathname(name);
@@ -39,18 +37,23 @@ void shell()
         else if (strstr(input, "ls") != NULL) // FUNCTIONAL, NEED TO CATCH EXCEPTIONS
         {
             char *name = getLastWord(input);
-
             int16_t res = verifyPath(name);
+            char *filename = getFilename(name);
             if (res != -1)
-                ls(res);
+            {
+                ls(res, filename);
+            }
         }
         else if (strstr(input, "unlink") != NULL)
         {
             char *name = getLastWord(input);
             char *filename = getFilename(name);
             char *pathname = getPathname(name);
-
-            unLink(name, pathname, filename);
+            int16_t block = verifyPath(pathname);
+            if (block != -1)
+            {
+                unLink(name, pathname, filename);
+            }
         }
         else if (strstr(input, "create") != NULL)
         {
@@ -70,6 +73,14 @@ void shell()
             char *pathname = getPathname(path);
             char *string = "Teste";
             write(path, pathname, filename, string);
+        }
+        else if (strstr(input, "append") != NULL)
+        {
+            char *path = getLastWord(input);
+            char *filename = getFilename(path);
+            char *pathname = getPathname(path);
+            char *string = "APPEND TEST";
+            append(path, pathname, filename, string);
         }
         else if (strstr(input, "read") != NULL)
         {
@@ -220,11 +231,13 @@ void mkdir(int16_t block, char *name)
 
 void create(int16_t block, char *name)
 {
+
     if (findByName(block, name) != -1)
     {
         printf("already exist with same name '%s'. \n", name);
         return;
     }
+
     int8_t space = getBlockEntry(block);
     if (space == -1)
     {
@@ -243,11 +256,12 @@ void create(int16_t block, char *name)
     updateFAT("filesystem.dat", dir_entry.first_block);
 }
 
-void ls(int8_t block)
+void ls(int8_t block, char *filename)
 {
-
-    if(isADir())
-    return;
+    if (!isADir(block, filename))
+    {
+        return;
+    }
     int8_t i;
     struct dir_entry_s dir_entry;
     for (i = 0; i < DIR_ENTRIES; i++)
@@ -264,13 +278,16 @@ void write(char *path, char *pathname, char *filename, char *string)
     {
         return;
     }
-    if(isADir(block,filename)){
+
+    if (isADir(block, filename) == 1)
+    {
+        printf("it is a directory.");
         return;
     }
 
     int32_t fileBlock = findByName(block, filename);
     if (fileBlock == -1)
-        fileBlock = getSpaceFAT();
+        printf("file does not exists.");
 
     for (int size = 0; size < strlen(string); size++)
     {
@@ -287,40 +304,47 @@ void read(char *pathname, char *filename)
         return;
     }
 
+    if (isADir(block, filename) == 1)
+    {
+        printf("it is a directory.");
+        return;
+    }
+
     int32_t fileBlock = findByName(block, filename);
 
     read_block("filesystem.dat", fileBlock, data_block);
     for (int size = 0; size < 30; size++)
     {
-        printf("%d = %c\n", data_block[size],data_block[size]);
+        printf("%c", data_block[size]);
     }
 }
-void append(char *path, char *pathname, char *filename, char *string){
+void append(char *path, char *pathname, char *filename, char *string)
+{
 
     int16_t block = verifyPath(pathname);
     if (block == -1)
     {
         return;
     }
-    if(isADir(block,filename)){
+    if (isADir(block, filename) == 1)
+    {
+        printf("it is a directory.");
         return;
     }
-
 
     int32_t fileBlock = findByName(block, filename);
     if (fileBlock == -1)
         fileBlock = getSpaceFAT();
-    int size = 0;
 
     read_block("filesystem.dat", fileBlock, data_block);
 
-    for (size; data_block[size] != 0; size++);
-
-
-    for (size; size < BLOCK_SIZE; size++)
+    int lastPos = 0;
+    for (lastPos; data_block[lastPos] != 0; lastPos++)
+        printf("%c", data_block[lastPos]);
+        
+    for (int size = lastPos, indexString = 0; size < BLOCK_SIZE && indexString < strlen(string); size++,indexString++)
     {
-        data_block[size] = (int8_t)string[size];
+        data_block[size] = (int8_t)string[indexString];
     }
     write_block("filesystem.dat", fileBlock, data_block);
-
 }
