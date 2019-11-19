@@ -68,7 +68,7 @@ void shell()
             char *path = getLastWord(input);
             char *filename = getFilename(path);
             char *pathname = getPathname(path);
-            char *string = "Laila Brudna";
+            char *string = "Teste";
             write(path, pathname, filename, string);
         }
         else if (strstr(input, "read") != NULL)
