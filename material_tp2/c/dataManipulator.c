@@ -81,10 +81,6 @@ int isEmpty(int8_t block)
     }
     return 1; //ta vazio
 }
-int startsWith(char *string, char *pre)
-{
-    return strncmp(pre, string, strlen(pre)) == 0;
-}
 int8_t findByName(int16_t block, char *name)
 {
     int8_t i;
@@ -94,6 +90,18 @@ int8_t findByName(int16_t block, char *name)
         read_dir_entry(block, i, &dir_entry);
         if (strcmp(name, dir_entry.filename) == 0)
             return dir_entry.first_block;
+    }
+    return -1;
+}
+int isADir(int16_t block, char *name)
+{
+    int8_t i;
+    struct dir_entry_s dir_entry;
+    for (i = 0; i < DIR_ENTRIES; i++)
+    {
+        read_dir_entry(block, i, &dir_entry);
+        if (strcmp(name, dir_entry.filename) == 0)
+            return dir_entry.attributes == 0x02;
     }
     return -1;
 }

@@ -3,13 +3,14 @@
 void shell();
 void init();
 void ls(int8_t block);
+
 void unLink(char *path, char *pathname, char *filename);
 
 int main(void)
 {
-    read_block("filesystem.dat", 9, data_block);
-    for(int i = 0; i < 30;i++)
-        printf("%c",data_block[i]);
+    // read_block("filesystem.dat", 5, data_block);
+    // for(int i = 0; i < 30;i++)
+    //     printf("%c",data_block[i]);
     shell();
     return 0;
 }
@@ -67,7 +68,15 @@ void shell()
             char *path = getLastWord(input);
             char *filename = getFilename(path);
             char *pathname = getPathname(path);
+            char *string = "Laila Brudna";
             write(path, pathname, filename, string);
+        }
+        else if (strstr(input, "read") != NULL)
+        {
+            char *path = getLastWord(input);
+            char *filename = getFilename(path);
+            char *pathname = getPathname(path);
+            read(pathname, filename);
         }
         else if (strstr(input, "exit") != NULL)
         {
@@ -237,6 +246,8 @@ void create(int16_t block, char *name)
 void ls(int8_t block)
 {
 
+    if(isADir())
+    return;
     int8_t i;
     struct dir_entry_s dir_entry;
     for (i = 0; i < DIR_ENTRIES; i++)
@@ -253,31 +264,58 @@ void write(char *path, char *pathname, char *filename, char *string)
     {
         return;
     }
+    if(isADir(block,filename)){
+        return;
+    }
+
     int32_t fileBlock = findByName(block, filename);
     if (fileBlock == -1)
         fileBlock = getSpaceFAT();
 
     for (int size = 0; size < strlen(string); size++)
     {
-        data_block[size] = (int8_t) string[size];
+        data_block[size] = (int8_t)string[size];
     }
     write_block("filesystem.dat", fileBlock, data_block);
 }
 
-
-void write(char *pathname, char *filename)
+void read(char *pathname, char *filename)
 {
     int16_t block = verifyPath(pathname);
     if (block == -1)
     {
         return;
     }
+
     int32_t fileBlock = findByName(block, filename);
 
-
     read_block("filesystem.dat", fileBlock, data_block);
-    for (int size = 0; size < strlen(string); size++)
+    for (int size = 0; size < 30; size++)
     {
-    printf("%c",data_block[size]);
+        printf("%d = %c\n", data_block[size],data_block[size]);
     }
+}
+void append(char *path, char *pathname, char *filename, char *string){
+
+    int16_t block = verifyPath(pathname);
+    if (block == -1)
+    {
+        return;
+    }
+    if(isADir(block,filename)){
+        return;
+    }
+
+    int32_t fileBlock = findByName(block, filename);
+    if (fileBlock == -1)
+        fileBlock = getSpaceFAT();
+    int size = 0;
+    for (size; data_block[size] != 0; size++)
+
+    for (size; size < BLOCK_SIZE; size++)
+    {
+
+    }
+    write_block("filesystem.dat", fileBlock, data_block);
+
 }
