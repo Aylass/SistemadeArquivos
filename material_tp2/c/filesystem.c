@@ -3,6 +3,7 @@
 void shell();
 void init();
 void ls(int8_t block, char *filename);
+char *getWords(char *data);
 
 void unLink(char *path, char *pathname, char *filename);
 
@@ -71,7 +72,7 @@ void shell()
             char *path = getLastWord(input);
             char *filename = getFilename(path);
             char *pathname = getPathname(path);
-            char *string = "Teste";
+            char* string = getWords(input);
             write(path, pathname, filename, string);
         }
         else if (strstr(input, "append") != NULL)
@@ -79,7 +80,7 @@ void shell()
             char *path = getLastWord(input);
             char *filename = getFilename(path);
             char *pathname = getPathname(path);
-            char *string = "APPEND TEST";
+            char* string = getWords(input);
             append(path, pathname, filename, string);
         }
         else if (strstr(input, "read") != NULL)
@@ -92,6 +93,11 @@ void shell()
         else if (strstr(input, "exit") != NULL)
         {
             exit(0);
+        }
+        else if (strstr(input, "test") != NULL)
+        {
+            char* test = getWords(input);
+            printf("%s", test);
         }
         else
         {
@@ -317,6 +323,7 @@ void read(char *pathname, char *filename)
     {
         printf("%c", data_block[size]);
     }
+    printf("\n");
 }
 void append(char *path, char *pathname, char *filename, char *string)
 {
@@ -341,8 +348,8 @@ void append(char *path, char *pathname, char *filename, char *string)
     int lastPos = 0;
     for (lastPos; data_block[lastPos] != 0; lastPos++)
         printf("%c", data_block[lastPos]);
-        
-    for (int size = lastPos, indexString = 0; size < BLOCK_SIZE && indexString < strlen(string); size++,indexString++)
+
+    for (int size = lastPos, indexString = 0; size < BLOCK_SIZE && indexString < strlen(string); size++, indexString++)
     {
         data_block[size] = (int8_t)string[indexString];
     }
