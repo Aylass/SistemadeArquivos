@@ -306,15 +306,20 @@ void append(char *path, char *pathname, char *filename, char *string){
         return;
     }
 
+
     int32_t fileBlock = findByName(block, filename);
     if (fileBlock == -1)
         fileBlock = getSpaceFAT();
     int size = 0;
-    for (size; data_block[size] != 0; size++)
+
+    read_block("filesystem.dat", fileBlock, data_block);
+
+    for (size; data_block[size] != 0; size++);
+
 
     for (size; size < BLOCK_SIZE; size++)
     {
-
+        data_block[size] = (int8_t)string[size];
     }
     write_block("filesystem.dat", fileBlock, data_block);
 
